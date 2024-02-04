@@ -1,0 +1,57 @@
+import requests
+
+class StockPortfolio:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.portfolio = {}
+
+    def add_stock(self, symbol, quantity):
+        if symbol in self.portfolio:
+            self.portfolio[symbol]["quantity"] += quantity
+        else:
+            self.portfolio[symbol] = {"quantity": quantity}
+
+    def remove_stock(self, symbol, quantity):
+        if symbol in self.portfolio:
+            if quantity >= self.portfolio[symbol]["quantity"]:
+                del self.portfolio[symbol]
+            else:
+                self.portfolio[symbol]["quantity"] -= quantity
+
+    def get_stock_price(self, symbol):
+        try:
+            # Use Alpha Vantage API for real-time stock data (Note: You need to sign up for a free API key)
+            api_url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={self.api_key}"
+            response = requests.get(api_url)
+            data = response.json()
+            return float(data["Global Quote"]["05. price"])
+        except Exception as e:
+            print(f"Error fetching stock price for {symbol}: {e}")
+            return None
+
+    def track_portfolio_value(self):
+        total_value = 0
+        for symbol, details in self.portfolio.items():
+            price = self.get_stock_price(symbol)
+            if price is not None:
+                quantity = details["quantity"]
+                total_value += price * quantity
+                print(f"{symbol}: {quantity} shares - Current Price: ${price:.2f} - Total Value: ${price * quantity:.2f}")
+            else:
+                print(f"Unable to fetch data for {symbol}")
+
+        print(f"Total Portfolio Value: ${total_value:.2f}")
+
+if __name__ == "__main__":
+    # Replace 'your_api_key' with your Alpha Vantage API key
+    api_key = 'your_api_key'
+    portfolio = StockPortfolio(api_key)
+
+    portfolio.add_stock("AAPL", 5)
+    portfolio.add_stock("GOOGL", 3)
+
+    portfolio.track_portfolio_value()
+
+    portfolio.remove_stock("AAPL", 2)
+
+    portfolio.track_portfolio_value()
